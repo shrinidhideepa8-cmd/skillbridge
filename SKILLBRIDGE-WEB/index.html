@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SkillBridge – Freelancer Platform</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --brand: #1a56db;
+    --brand-dark: #1239a3;
+    --brand-light: #e8f0fe;
+    --surface: #ffffff;
+    --surface-alt: #f8fafc;
+    --surface-hover: #f1f5f9;
+    --border: #e2e8f0;
+    --border-strong: #cbd5e1;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+    --green: #059669;
+    --green-light: #d1fae5;
+    --amber: #d97706;
+    --amber-light: #fef3c7;
+    --red: #dc2626;
+    --red-light: #fee2e2;
+    --radius-sm: 6px;
+    --radius: 10px;
+    --radius-lg: 16px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+    --shadow-lg: 0 12px 32px rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.06);
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--surface-alt); color: var(--text-primary); line-height: 1.6; }
+  #root { min-height: 100vh; }
+  button { font-family: inherit; cursor: pointer; }
+  input, textarea, select { font-family: inherit; }
+  a { color: inherit; text-decoration: none; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 99px; }
+
+  /* Animations */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .fade-in { animation: fadeIn 0.3s ease forwards; }
+  .slide-in { animation: slideIn 0.25s ease forwards; }
+  .spinner { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--brand); border-radius: 50%; animation: spin 0.7s linear infinite; }
+
+  /* Nav */
+  .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+  .nav-inner { max-width: 1200px; margin: 0 auto; padding: 0 24px; height: 64px; display: flex; align-items: center; gap: 32px; }
+  .nav-logo { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--brand); }
+  .nav-logo span { color: var(--text-primary); }
+  .nav-links { display: flex; gap: 4px; flex: 1; }
+  .nav-link { padding: 8px 14px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; color: var(--text-secondary); border: none; background: none; transition: all 0.15s; }
+  .nav-link:hover { background: var(--surface-hover); color: var(--text-primary); }
+  .nav-link.active { background: var(--brand-light); color: var(--brand); }
+  .nav-actions { display: flex; gap: 10px; align-items: center; margin-left: auto; }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; border: none; transition: all 0.15s; white-space: nowrap; }
+  .btn-primary { background: var(--brand); color: #fff; }
+  .btn-primary:hover { background: var(--brand-dark); }
+  .btn-secondary { background: var(--surface); color: var(--text-primary); border: 1px solid var(--border-strong); }
+  .btn-secondary:hover { background: var(--surface-hover); }
+  .btn-ghost { background: transparent; color: var(--text-secondary); }
+  .btn-ghost:hover { background: var(--surface-hover); color: var(--text-primary); }
+  .btn-sm { padding: 6px 13px; font-size: 13px; }
+  .btn-danger { background: var(--red-light); color: var(--red); }
+  .btn-danger:hover { background: #fecaca; }
+  .btn-success { background: var(--green-light); color: var(--green); }
+  .btn-success:hover { background: #a7f3d0; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Cards */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+  .card-hover { transition: box-shadow 0.2s, transform 0.2s; }
+  .card-hover:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+
+  /* Badge */
+  .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 500; }
+  .badge-blue { background: var(--brand-light); color: var(--brand); }
+  .badge-green { background: var(--green-light); color: var(--green); }
+  .badge-amber { background: var(--amber-light); color: var(--amber); }
+  .badge-gray { background: var(--surface-hover); color: var(--text-secondary); }
+
+  /* Form */
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-label { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+  .form-input { padding: 10px 14px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); font-size: 14px; outline: none; background: var(--surface); color: var(--text-primary); transition: border-color 0.15s; }
+  .form-input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(26,86,219,0.1); }
+  .form-input::placeholder { color: var(--text-muted); }
+  textarea.form-input { resize: vertical; min-height: 100px; }
+  select.form-input { cursor: pointer; }
+
+  /* Modal */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; animation: fadeIn 0.2s ease; }
+  .modal { background: var(--surface); border-radius: var(--radius-lg); width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-lg); }
+  .modal-header { padding: 24px 24px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .modal-body { padding: 24px; display: flex; flex-direction: column; gap: 18px; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+
+  /* Avatar */
+  .avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 15px; flex-shrink: 0; }
+  .avatar-lg { width: 64px; height: 64px; font-size: 22px; }
+  .avatar-xl { width: 88px; height: 88px; font-size: 30px; }
+
+  /* Stars */
+  .stars { color: #f59e0b; letter-spacing: -2px; }
+
+  /* Tag/Skill chip */
+  .chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px; background: var(--brand-light); color: var(--brand); border-radius: 99px; font-size: 13px; font-weight: 500; }
+
+  /* Section */
+  .section { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+
+  /* Grid */
+  .grid-3 { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 20px; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); padding-bottom: 0; }
+  .tab { padding: 10px 18px; border: none; background: none; font-size: 14px; font-weight: 500; color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; }
+  .tab.active { color: var(--brand); border-bottom-color: var(--brand); }
+  .tab:hover:not(.active) { color: var(--text-primary); }
+
+  /* Toast */
+  .toast-container { position: fixed; top: 80px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+  .toast { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 18px; font-size: 14px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 10px; animation: slideIn 0.25s ease; min-width: 260px; }
+  .toast-success { border-left: 3px solid var(--green); }
+  .toast-error { border-left: 3px solid var(--red); }
+
+  /* Hero */
+  .hero { background: linear-gradient(135deg, #0f172a 0%, #1a56db 100%); color: #fff; padding: 80px 24px; text-align: center; }
+  .hero h1 { font-family: 'DM Serif Display', serif; font-size: 52px; line-height: 1.15; margin-bottom: 16px; }
+  .hero h1 em { font-style: italic; color: #93c5fd; }
+  .hero p { font-size: 18px; opacity: 0.85; max-width: 560px; margin: 0 auto 36px; }
+  .hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .hero-btns .btn { padding: 13px 28px; font-size: 15px; border-radius: var(--radius); }
+
+  /* Stats bar */
+  .stats-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 18px 24px; }
+  .stats-bar-inner { max-width: 1200px; margin: 0 auto; display: flex; gap: 40px; }
+  .stat-item { display: flex; flex-direction: column; }
+  .stat-num { font-size: 22px; font-weight: 600; color: var(--text-primary); }
+  .stat-label { font-size: 13px; color: var(--text-muted); }
+
+  /* Search bar */
+  .search-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); display: flex; overflow: hidden; box-shadow: var(--shadow-sm); }
+  .search-wrap input { flex: 1; padding: 12px 18px; border: none; outline: none; font-size: 15px; background: transparent; color: var(--text-primary); }
+  .search-wrap select { border: none; border-left: 1px solid var(--border); padding: 12px 14px; outline: none; font-size: 14px; background: var(--surface-alt); color: var(--text-secondary); cursor: pointer; }
+  .search-wrap button { border: none; background: var(--brand); color: #fff; padding: 12px 24px; font-size: 14px; font-weight: 500; cursor: pointer; transition: background 0.15s; }
+  .search-wrap button:hover { background: var(--brand-dark); }
+
+  /* Profile card */
+  .profile-card { padding: 24px; display: flex; flex-direction: column; gap: 14px; }
+  .profile-card-top { display: flex; gap: 14px; align-items: flex-start; }
+  .profile-card-info h3 { font-size: 16px; font-weight: 600; }
+  .profile-card-info p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .profile-card-skills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .profile-card-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 14px; border-top: 1px solid var(--border); }
+
+  /* Job card */
+  .job-card { padding: 22px; display: flex; flex-direction: column; gap: 12px; }
+  .job-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .job-card-title { font-size: 16px; font-weight: 600; }
+  .job-card-meta { display: flex; gap: 14px; font-size: 13px; color: var(--text-secondary); }
+
+  /* Chat */
+  .chat-list { border-right: 1px solid var(--border); width: 300px; flex-shrink: 0; overflow-y: auto; }
+  .chat-item { padding: 14px 18px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  .chat-item:hover, .chat-item.active { background: var(--brand-light); }
+  .chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+  .message-bubble { max-width: 70%; padding: 10px 14px; border-radius: var(--radius); font-size: 14px; line-height: 1.5; }
+  .message-mine { background: var(--brand); color: #fff; margin-left: auto; border-radius: var(--radius) var(--radius-sm) var(--radius-sm) var(--radius); }
+  .message-theirs { background: var(--surface-hover); color: var(--text-primary); border-radius: var(--radius-sm) var(--radius) var(--radius) var(--radius-sm); }
+  .chat-input-row { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; }
+
+  /* Rating stars interactive */
+  .star-btn { background: none; border: none; font-size: 24px; cursor: pointer; transition: transform 0.1s; padding: 0 2px; }
+  .star-btn:hover { transform: scale(1.2); }
+
+  /* Divider */
+  .divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+  /* Empty state */
+  .empty { text-align: center; padding: 60px 20px; }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+  .empty p { font-size: 14px; color: var(--text-secondary); }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 36px; }
+    .nav-links { display: none; }
+    .stats-bar-inner { gap: 24px; }
+    .grid-3, .grid-2 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ─── Firebase Config ───────────────────────────────────────────────────────────
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDXunTOlIaOjlnjAbBZ6MGQfbQR1eI4qWQ",
+  authDomain: "skillbridge-app-78a40.firebaseapp.com",
+  projectId: "skillbridge-app-78a40",
+  storageBucket: "skillbridge-app-78a40.firebasestorage.app",
+  messagingSenderId: "1035863326656",
+  appId: "1:1035863326656:web:02aa01947539ae40a59225",
+  measurementId: "G-KM3Q6MFRTK"
+};
+
+// ─── Initialize Firebase ───────────────────────────────────────────────────────
+const firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.firestore();
+const auth = firebase.auth();
+
+// ─── Firebase helpers ──────────────────────────────────────────────────────────
+const FB = {
+  // Auth
+  async register(email, password, name, role) {
+    const cred = await auth.createUserWithEmailAndPassword(email, password);
+    const user = { id: cred.user.uid, name, email, role, color: '#1a56db', createdAt: new Date().toISOString() };
+    await db.collection('users').doc(cred.user.uid).set(user);
+    return user;
+  },
+  async login(email, password) {
+    const cred = await auth.signInWithEmailAndPassword(email, password);
+    const snap = await db.collection('users').doc(cred.user.uid).get();
+    return snap.exists ? { id: cred.user.uid, ...snap.data() } : { id: cred.user.uid, email };
+  },
+  async logout() { await auth.signOut(); },
+
+  // Freelancers
+  async getFreelancers() {
+    const snap = await db.collection('freelancers').get();
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  },
+  async saveFreelancer(data) {
+    await db.collection('freelancers').doc(data.id).set(data, { merge: true });
+  },
+
+  // Jobs
+  async getJobs() {
+    const snap = await db.collection('jobs').orderBy('createdAt', 'desc').get();
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  },
+  async postJob(job) {
+    const ref = await db.collection('jobs').add({ ...job, createdAt: new Date().toISOString() });
+    return { id: ref.id, ...job };
+  },
+
+  // Messages — real-time listener
+  listenMessages(chatKey, callback) {
+    return db.collection('messages').doc(chatKey).collection('msgs')
+      .orderBy('time').onSnapshot(snap => {
+        callback(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      });
+  },
+  async sendMessage(chatKey, msg) {
+    await db.collection('messages').doc(chatKey).collection('msgs').add(msg);
+  },
+
+  // Reviews
+  async getReviews(freelancerId) {
+    const snap = await db.collection('reviews').doc(freelancerId).collection('items').get();
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  },
+  async addReview(freelancerId, review) {
+    await db.collection('reviews').doc(freelancerId).collection('items').add(review);
+  },
+};
+
+// ─── Simulated Data Store (replace with real Firebase calls) ──────────────────
+// This in-memory store lets the app run fully without Firebase configured yet.
+// Once you add your Firebase config above and import the SDK, swap these functions.
+
+let STORE = {
+  users: {},
+  freelancers: [
+    { id: 'f1', name: 'Arjun Nair', title: 'Full-Stack Developer', category: 'Engineering', location: 'Chennai', rate: '₹1,200/hr', skills: ['React', 'Node.js', 'PostgreSQL'], bio: '6 years building scalable web apps. Love clean code and great UX.', rating: 4.9, reviews: 34, avatar: 'AN', color: '#1a56db', portfolio: ['E-commerce site', 'SaaS dashboard'], available: true },
+    { id: 'f2', name: 'Priya Menon', title: 'UI/UX Designer', category: 'Design', location: 'Bangalore', rate: '₹900/hr', skills: ['Figma', 'User Research', 'Prototyping'], bio: 'Creating intuitive digital experiences for 5+ years. Specialize in SaaS products.', rating: 4.8, reviews: 21, avatar: 'PM', color: '#7c3aed', portfolio: ['Banking app redesign', 'Travel platform'], available: true },
+    { id: 'f3', name: 'Karthik Raj', title: 'Commercial Photographer', category: 'Photography', location: 'Madurai', rate: '₹600/hr', skills: ['Product Photography', 'Retouching', 'Lightroom'], bio: 'Bringing brands to life through powerful imagery. 8 years in commercial photography.', rating: 5.0, reviews: 18, avatar: 'KR', color: '#059669', portfolio: ['Brand lookbook', 'Product catalog'], available: false },
+    { id: 'f4', name: 'Sneha Patel', title: 'Content Writer', category: 'Writing', location: 'Mumbai', rate: '₹400/hr', skills: ['SEO Writing', 'Copywriting', 'Research'], bio: 'Crafting content that ranks and converts. Former journalist turned digital writer.', rating: 4.7, reviews: 52, avatar: 'SP', color: '#d97706', portfolio: ['Tech blog series', 'Product descriptions'], available: true },
+    { id: 'f5', name: 'Rahul Verma', title: 'Data Scientist', category: 'Engineering', location: 'Hyderabad', rate: '₹1,500/hr', skills: ['Python', 'Machine Learning', 'TensorFlow'], bio: 'Turning raw data into actionable insights. PhD in CS, 4 years industry experience.', rating: 4.6, reviews: 15, avatar: 'RV', color: '#dc2626', portfolio: ['Churn prediction model', 'NLP pipeline'], available: true },
+    { id: 'f6', name: 'Aisha Khan', title: 'Motion Designer', category: 'Design', location: 'Delhi', rate: '₹850/hr', skills: ['After Effects', 'Cinema 4D', 'Premiere Pro'], bio: 'Breathing life into brands with motion. 7 years in animation and video production.', rating: 4.9, reviews: 29, avatar: 'AK', color: '#0891b2', portfolio: ['Brand identity animation', 'Explainer videos'], available: true },
+  ],
+  jobs: [
+    { id: 'j1', title: 'React Developer for E-commerce Rebuild', category: 'Engineering', budget: '₹80,000–₹1,20,000', type: 'Fixed Price', duration: '2 months', posted: '2 hours ago', description: 'We need an experienced React developer to rebuild our e-commerce frontend. Must have Redux and API integration experience.', skills: ['React', 'Redux', 'REST API'], clientName: 'TechRetail Pvt Ltd', proposals: 7, clientId: 'c1' },
+    { id: 'j2', title: 'Brand Identity Design for Startup', category: 'Design', budget: '₹40,000–₹60,000', type: 'Fixed Price', duration: '3 weeks', posted: '5 hours ago', description: 'Early-stage fintech startup needs a complete brand identity — logo, color palette, typography, and brand guidelines.', skills: ['Branding', 'Figma', 'Illustration'], clientName: 'FinFlow Ventures', proposals: 12, clientId: 'c2' },
+    { id: 'j3', title: 'Product Photography – Monthly Retainer', category: 'Photography', budget: '₹25,000/month', type: 'Retainer', duration: 'Ongoing', posted: '1 day ago', description: 'Growing D2C brand needs a reliable product photographer for monthly catalog shoots. 40-60 products per session.', skills: ['Product Photography', 'Editing', 'Lighting'], clientName: 'Organika Foods', proposals: 4, clientId: 'c3' },
+    { id: 'j4', title: '10 Blog Posts – B2B SaaS', category: 'Writing', budget: '₹15,000–₹20,000', type: 'Fixed Price', duration: '3 weeks', posted: '3 hours ago', description: 'Looking for an experienced B2B writer to create 10 in-depth blog posts (2000+ words each) targeting CTO audience. Topics provided.', skills: ['SEO Writing', 'B2B Marketing', 'Research'], clientName: 'Clarix Software', proposals: 19, clientId: 'c4' },
+    { id: 'j5', title: 'Python ML Model for Customer Churn', category: 'Engineering', budget: '₹60,000–₹90,000', type: 'Fixed Price', duration: '6 weeks', posted: '6 hours ago', description: 'We have 3 years of transactional data and need a churn prediction model with at least 85% accuracy, plus an explanation dashboard.', skills: ['Python', 'Scikit-learn', 'Data Visualization'], clientName: 'GrowthStack Inc', proposals: 6, clientId: 'c5' },
+  ],
+  reviews: {
+    f1: [{ id: 'r1', clientName: 'Priya S', rating: 5, text: 'Arjun delivered exceptional work ahead of schedule. Very professional and communicative.', date: 'Dec 2024' }],
+    f2: [{ id: 'r2', clientName: 'Vikram R', rating: 5, text: 'Priya completely transformed our product. Thoughtful UX decisions at every step.', date: 'Jan 2025' }],
+  },
+  messages: {},
+};
+
+let nextId = 100;
+const newId = () => `id${nextId++}`;
+
+// ─── Context ──────────────────────────────────────────────────────────────────
+const AppCtx = React.createContext();
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+function ToastContainer({ toasts }) {
+  return (
+    <div className="toast-container">
+      {toasts.map(t => (
+        <div key={t.id} className={`toast toast-${t.type}`}>
+          <span>{t.type === 'success' ? '✓' : '✕'}</span>
+          {t.msg}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function Avatar({ name, color, size = 'md' }) {
+  const initials = name ? name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : '?';
+  const cls = size === 'lg' ? 'avatar avatar-lg' : size === 'xl' ? 'avatar avatar-xl' : 'avatar';
+  return (
+    <div className={cls} style={{ background: color + '22', color }}>
+      {initials}
+    </div>
+  );
+}
+
+function StarRating({ value, onChange, readonly = false }) {
+  const [hovered, setHovered] = useState(0);
+  return (
+    <div style={{ display: 'flex', gap: 2 }}>
+      {[1,2,3,4,5].map(s => (
+        <button
+          key={s}
+          className="star-btn"
+          style={{ color: (hovered || value) >= s ? '#f59e0b' : '#d1d5db', fontSize: readonly ? 16 : 22 }}
+          onClick={() => !readonly && onChange && onChange(s)}
+          onMouseEnter={() => !readonly && setHovered(s)}
+          onMouseLeave={() => !readonly && setHovered(0)}
+          disabled={readonly}
+        >★</button>
+      ))}
+    </div>
+  );
+}
+
+function Modal({ onClose, title, children, footer }) {
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal">
+        <div className="modal-header">
+          <h3 style={{ fontSize: 18, fontWeight: 600 }}>{title}</h3>
+          <button className="btn btn-ghost btn-sm" onClick={onClose} style={{ padding: '4px 8px', fontSize: 18 }}>×</button>
+        </div>
+        <div className="modal-body">{children}</div>
+        {footer && <div className="modal-footer">{footer}</div>}
+      </div>
+    </div>
+  );
+}
+
+// ─── Pages ────────────────────────────────────────────────────────────────────
+
+function HomePage({ setPage }) {
+  return (
+    <div className="fade-in">
+      <div className="hero">
+        <div style={{ maxWidth: 700, margin: '0 auto' }}>
+          <h1>Find <em>skilled professionals</em> for every project</h1>
+          <p>Connect with top freelancers in engineering, design, photography, writing, and more. Post a job or create your profile today.</p>
+          <div className="hero-btns">
+            <button className="btn btn-primary" style={{ background: '#fff', color: '#1a56db' }} onClick={() => setPage('freelancers')}>
+              Browse Freelancers
+            </button>
+            <button className="btn btn-secondary" style={{ borderColor: 'rgba(255,255,255,0.4)', color: '#fff', background: 'rgba(255,255,255,0.1)' }} onClick={() => setPage('jobs')}>
+              Post a Job
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="stats-bar">
+        <div className="stats-bar-inner">
+          {[['2,400+','Skilled freelancers'],['890+','Companies hiring'],['14,200+','Projects completed'],['4.8★','Average rating']].map(([n,l]) => (
+            <div className="stat-item" key={l}>
+              <span className="stat-num">{n}</span>
+              <span className="stat-label">{l}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="section">
+        <h2 style={{ fontSize: 24, fontWeight: 600, marginBottom: 24 }}>Browse by category</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 14 }}>
+          {[['⚙️','Engineering'],['🎨','Design'],['📸','Photography'],['✍️','Writing'],['📊','Data & Analytics'],['📱','Mobile Dev'],['🎬','Video Editing'],['🔊','Marketing']].map(([icon, cat]) => (
+            <button key={cat} className="card card-hover" style={{ padding: '20px 16px', textAlign: 'center', border: 'none', width: '100%', cursor: 'pointer', background: 'white' }}
+              onClick={() => setPage('freelancers')}>
+              <div style={{ fontSize: 28, marginBottom: 8 }}>{icon}</div>
+              <div style={{ fontSize: 14, fontWeight: 500 }}>{cat}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="section" style={{ paddingTop: 0 }}>
+        <h2 style={{ fontSize: 24, fontWeight: 600, marginBottom: 24 }}>Latest job postings</h2>
+        <div className="grid-2">
+          {STORE.jobs.slice(0,4).map(job => (
+            <div key={job.id} className="card card-hover">
+              <div className="job-card">
+                <div className="job-card-header">
+                  <div>
+                    <div className="job-card-title">{job.title}</div>
+                    <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>{job.clientName}</div>
+                  </div>
+                  <span className="badge badge-blue">{job.category}</span>
+                </div>
+                <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6 }}>{job.description.slice(0, 100)}…</p>
+                <div className="job-card-meta">
+                  <span>💰 {job.budget}</span>
+                  <span>⏱ {job.duration}</span>
+                  <span>👤 {job.proposals} proposals</span>
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {job.skills.map(s => <span className="chip" key={s}>{s}</span>)}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ textAlign: 'center', marginTop: 28 }}>
+          <button className="btn btn-secondary" onClick={() => setPage('jobs')}>View all jobs →</button>
+        </div>
+      </div>
+
+      <div style={{ background: 'var(--brand)', color: '#fff', padding: '60px 24px', textAlign: 'center' }}>
+        <h2 style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, marginBottom: 12 }}>Are you a freelancer?</h2>
+        <p style={{ opacity: 0.85, marginBottom: 28, fontSize: 16 }}>Create your profile, showcase your skills, and start getting hired today.</p>
+        <button className="btn" style={{ background: '#fff', color: 'var(--brand)', padding: '12px 28px', fontSize: 15 }} onClick={() => setPage('register')}>
+          Create Free Profile
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function FreelancersPage({ currentUser, setPage }) {
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('All');
+  const [selected, setSelected] = useState(null);
+  const [showContact, setShowContact] = useState(false);
+  const [message, setMessage] = useState('');
+  const { showToast } = React.useContext(AppCtx);
+
+  const categories = ['All', 'Engineering', 'Design', 'Photography', 'Writing'];
+  const filtered = STORE.freelancers.filter(f => {
+    const matchCat = category === 'All' || f.category === category;
+    const matchSearch = !search || f.name.toLowerCase().includes(search.toLowerCase()) ||
+      f.skills.some(s => s.toLowerCase().includes(search.toLowerCase())) ||
+      f.title.toLowerCase().includes(search.toLowerCase());
+    return matchCat && matchSearch;
+  });
+
+  function sendMessage() {
+    if (!message.trim()) return;
+    const key = `${currentUser?.id || 'guest'}_${selected.id}`;
+    if (!STORE.messages[key]) STORE.messages[key] = [];
+    STORE.messages[key].push({ id: newId(), from: currentUser?.id || 'guest', text: message, time: new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) });
+    setShowContact(false);
+    setMessage('');
+    showToast('Message sent!', 'success');
+    setPage('messages');
+  }
+
+  return (
+    <div className="fade-in">
+      <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '24px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <h1 style={{ fontSize: 28, fontWeight: 600, marginBottom: 20 }}>Browse Freelancers</h1>
+          <div className="search-wrap" style={{ maxWidth: 600 }}>
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name, skill, or title…" />
+            <select value={category} onChange={e => setCategory(e.target.value)}>
+              {categories.map(c => <option key={c}>{c}</option>)}
+            </select>
+            <button>Search</button>
+          </div>
+        </div>
+      </div>
+
+      <div className="section">
+        <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
+          {categories.map(c => (
+            <button key={c} className={`badge ${category === c ? 'badge-blue' : 'badge-gray'}`} style={{ cursor: 'pointer', padding: '6px 16px', fontSize: 13 }} onClick={() => setCategory(c)}>{c}</button>
+          ))}
+          <span style={{ fontSize: 14, color: 'var(--text-muted)', marginLeft: 'auto', alignSelf: 'center' }}>{filtered.length} freelancers found</span>
+        </div>
+
+        {filtered.length === 0 ? (
+          <div className="empty">
+            <div className="empty-icon">🔍</div>
+            <h3>No freelancers found</h3>
+            <p>Try adjusting your search or category filter.</p>
+          </div>
+        ) : (
+          <div className="grid-3">
+            {filtered.map(f => (
+              <div key={f.id} className="card card-hover" style={{ cursor: 'pointer' }} onClick={() => setSelected(f)}>
+                <div className="profile-card">
+                  <div className="profile-card-top">
+                    <Avatar name={f.name} color={f.color} size="lg" />
+                    <div className="profile-card-info">
+                      <h3>{f.name}</h3>
+                      <p>{f.title}</p>
+                      <p style={{ marginTop: 4 }}>📍 {f.location}</p>
+                    </div>
+                    <span className={`badge ${f.available ? 'badge-green' : 'badge-gray'}`} style={{ marginLeft: 'auto', flexShrink: 0 }}>
+                      {f.available ? 'Available' : 'Busy'}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6 }}>{f.bio.slice(0, 90)}…</p>
+                  <div className="profile-card-skills">
+                    {f.skills.slice(0, 3).map(s => <span className="chip" key={s}>{s}</span>)}
+                  </div>
+                  <div className="profile-card-footer">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span className="stars">{'★'.repeat(Math.round(f.rating))}</span>
+                      <span style={{ fontSize: 13, fontWeight: 600 }}>{f.rating}</span>
+                      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>({f.reviews})</span>
+                    </div>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--brand)' }}>{f.rate}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Freelancer Detail Modal */}
+      {selected && (
+        <Modal onClose={() => setSelected(null)} title="Freelancer Profile"
+          footer={
+            <>
+              <button className="btn btn-secondary" onClick={() => setSelected(null)}>Close</button>
+              <button className="btn btn-primary" onClick={() => { setShowContact(true); setSelected(null); }}>Contact {selected.name.split(' ')[0]}</button>
+            </>
+          }>
+          <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+            <Avatar name={selected.name} color={selected.color} size="xl" />
+            <div style={{ flex: 1 }}>
+              <h2 style={{ fontSize: 20, fontWeight: 600 }}>{selected.name}</h2>
+              <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>{selected.title} · {selected.location}</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                <StarRating value={Math.round(selected.rating)} readonly />
+                <span style={{ fontSize: 14 }}>{selected.rating} ({selected.reviews} reviews)</span>
+              </div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--brand)' }}>{selected.rate}</div>
+              <span className={`badge ${selected.available ? 'badge-green' : 'badge-gray'}`}>{selected.available ? 'Available now' : 'Currently busy'}</span>
+            </div>
+          </div>
+
+          <div>
+            <h4 style={{ fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, color: 'var(--text-muted)', marginBottom: 8 }}>About</h4>
+            <p style={{ fontSize: 14, lineHeight: 1.7 }}>{selected.bio}</p>
+          </div>
+
+          <div>
+            <h4 style={{ fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, color: 'var(--text-muted)', marginBottom: 10 }}>Skills</h4>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {selected.skills.map(s => <span className="chip" key={s}>{s}</span>)}
+            </div>
+          </div>
+
+          {selected.portfolio?.length > 0 && (
+            <div>
+              <h4 style={{ fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, color: 'var(--text-muted)', marginBottom: 10 }}>Portfolio</h4>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                {selected.portfolio.map(p => (
+                  <div key={p} style={{ background: 'var(--surface-hover)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '10px 16px', fontSize: 13, fontWeight: 500 }}>
+                    📁 {p}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {(STORE.reviews[selected.id] || []).length > 0 && (
+            <div>
+              <h4 style={{ fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, color: 'var(--text-muted)', marginBottom: 10 }}>Reviews</h4>
+              {STORE.reviews[selected.id].map(r => (
+                <div key={r.id} style={{ background: 'var(--surface-alt)', borderRadius: 'var(--radius-sm)', padding: '12px 14px', marginBottom: 8 }}>
+                  <div style={{ display: 'flex', justify: 'space-between', gap: 8 }}>
+                    <strong style={{ fontSize: 14 }}>{r.clientName}</strong>
+                    <StarRating value={r.rating} readonly />
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto' }}>{r.date}</span>
+                  </div>
+                  <p style={{ fontSize: 14, marginTop: 6, color: 'var(--text-secondary)' }}>{r.text}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </Modal>
+      )}
+
+      {/* Contact Modal */}
+      {showContact && selected && (
+        <Modal onClose={() => setShowContact(false)} title={`Message ${selected.name}`}
+          footer={
+            <>
+              <button className="btn btn-secondary" onClick={() => setShowContact(false)}>Cancel</button>
+              <button className="btn btn-primary" onClick={sendMessage}>Send Message</button>
+            </>
+          }>
+          <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Introduce yourself and describe what you're looking for.</p>
+          <div className="form-group">
+            <label className="form-label">Your message</label>
+            <textarea className="form-input" rows={5} value={message} onChange={e => setMessage(e.target.value)} placeholder={`Hi ${selected.name.split(' ')[0]}, I came across your profile and I'm interested in...`} />
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+function JobsPage({ currentUser, showToast }) {
+  const [showPostJob, setShowPostJob] = useState(false);
+  const [selected, setSelected] = useState(null);
+  const [jobs, setJobs] = useState(STORE.jobs);
+  const [category, setCategory] = useState('All');
+  const [form, setForm] = useState({ title: '', category: 'Engineering', budget: '', type: 'Fixed Price', duration: '', description: '', skills: '' });
+  const [showApply, setShowApply] = useState(false);
+  const [proposal, setProposal] = useState('');
+  const [proposalRate, setProposalRate] = useState('');
+
+  const categories = ['All', 'Engineering', 'Design', 'Photography', 'Writing'];
+  const filtered = jobs.filter(j => category === 'All' || j.category === category);
+
+  function postJob() {
+    if (!form.title || !form.budget || !form.description) { showToast('Please fill in all required fields', 'error'); return; }
+    const job = {
+      id: newId(), ...form,
+      skills: form.skills.split(',').map(s => s.trim()).filter(Boolean),
+      clientName: currentUser?.name || 'Anonymous',
+      proposals: 0, posted: 'Just now', clientId: currentUser?.id || 'guest'
+    };
+    STORE.jobs = [job, ...STORE.jobs];
+    setJobs([job, ...jobs]);
+    setShowPostJob(false);
+    setForm({ title: '', category: 'Engineering', budget: '', type: 'Fixed Price', duration: '', description: '', skills: '' });
+    showToast('Job posted successfully!', 'success');
+  }
+
+  function applyJob() {
+    if (!proposal || !proposalRate) { showToast('Please fill in all fields', 'error'); return; }
+    selected.proposals = (selected.proposals || 0) + 1;
+    setShowApply(false);
+    setSelected(null);
+    setProposal(''); setProposalRate('');
+    showToast('Proposal submitted!', 'success');
+  }
+
+  return (
+    <div className="fade-in">
+      <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '24px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h1 style={{ fontSize: 28, fontWeight: 600 }}>Job Listings</h1>
+          <button className="btn btn-primary" onClick={() => setShowPostJob(true)}>+ Post a Job</button>
+        </div>
+      </div>
+
+      <div className="section">
+        <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
+          {categories.map(c => (
+            <button key={c} className={`badge ${category === c ? 'badge-blue' : 'badge-gray'}`} style={{ cursor: 'pointer', padding: '6px 16px', fontSize: 13 }} onClick={() => setCategory(c)}>{c}</button>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {filtered.map(job => (
+            <div key={job.id} className="card card-hover" style={{ cursor: 'pointer' }} onClick={() => setSelected(job)}>
+              <div className="job-card">
+                <div className="job-card-header">
+                  <div>
+                    <div className="job-card-title">{job.title}</div>
+                    <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>{job.clientName} · Posted {job.posted}</div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                    <span className="badge badge-blue">{job.category}</span>
+                    <span className="badge badge-amber">{job.type}</span>
+                  </div>
+                </div>
+                <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6 }}>{job.description.slice(0,140)}…</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {job.skills.map(s => <span className="chip" key={s}>{s}</span>)}
+                  </div>
+                  <div className="job-card-meta">
+                    <span>💰 {job.budget}</span>
+                    <span>⏱ {job.duration}</span>
+                    <span>📋 {job.proposals} proposals</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Job Detail Modal */}
+      {selected && (
+        <Modal onClose={() => setSelected(null)} title="Job Details"
+          footer={
+            <>
+              <button className="btn btn-secondary" onClick={() => setSelected(null)}>Close</button>
+              <button className="btn btn-primary" onClick={() => { setShowApply(true); setSelected(null); }}>Submit Proposal</button>
+            </>
+          }>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <h2 style={{ fontSize: 20, fontWeight: 600 }}>{selected.title}</h2>
+              <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>{selected.clientName}</p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--brand)' }}>{selected.budget}</div>
+              <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>{selected.type} · {selected.duration}</div>
+            </div>
+          </div>
+          <div className="divider" />
+          <p style={{ fontSize: 15, lineHeight: 1.7 }}>{selected.description}</p>
+          <div>
+            <h4 style={{ fontSize: 13, fontWeight: 600, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 8 }}>Required Skills</h4>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {selected.skills.map(s => <span className="chip" key={s}>{s}</span>)}
+            </div>
+          </div>
+          <div style={{ background: 'var(--surface-alt)', borderRadius: 'var(--radius)', padding: '14px 16px', display: 'flex', gap: 20 }}>
+            <div><div style={{ fontSize: 18, fontWeight: 600 }}>{selected.proposals}</div><div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Proposals</div></div>
+            <div><div style={{ fontSize: 18, fontWeight: 600 }}>{selected.duration}</div><div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Timeline</div></div>
+            <div><div style={{ fontSize: 18, fontWeight: 600 }}>{selected.posted}</div><div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Posted</div></div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Apply Modal */}
+      {showApply && (
+        <Modal onClose={() => setShowApply(false)} title="Submit Proposal"
+          footer={
+            <>
+              <button className="btn btn-secondary" onClick={() => setShowApply(false)}>Cancel</button>
+              <button className="btn btn-primary" onClick={applyJob}>Submit Proposal</button>
+            </>
+          }>
+          <div className="form-group">
+            <label className="form-label">Your proposed rate</label>
+            <input className="form-input" value={proposalRate} onChange={e => setProposalRate(e.target.value)} placeholder="e.g. ₹1,200/hr or ₹75,000 fixed" />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Cover letter</label>
+            <textarea className="form-input" rows={5} value={proposal} onChange={e => setProposal(e.target.value)} placeholder="Describe your relevant experience, approach, and why you're the best fit for this project…" />
+          </div>
+        </Modal>
+      )}
+
+      {/* Post Job Modal */}
+      {showPostJob && (
+        <Modal onClose={() => setShowPostJob(false)} title="Post a New Job"
+          footer={
+            <>
+              <button className="btn btn-secondary" onClick={() => setShowPostJob(false)}>Cancel</button>
+              <button className="btn btn-primary" onClick={postJob}>Post Job</button>
+            </>
+          }>
+          {[
+            { key: 'title', label: 'Job Title *', placeholder: 'e.g. React Developer for E-commerce App' },
+          ].map(f => (
+            <div className="form-group" key={f.key}>
+              <label className="form-label">{f.label}</label>
+              <input className="form-input" value={form[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} placeholder={f.placeholder} />
+            </div>
+          ))}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <div className="form-group">
+              <label className="form-label">Category</label>
+              <select className="form-input" value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))}>
+                {['Engineering','Design','Photography','Writing','Marketing','Other'].map(c => <option key={c}>{c}</option>)}
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Project Type</label>
+              <select className="form-input" value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))}>
+                {['Fixed Price','Hourly','Retainer'].map(c => <option key={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <div className="form-group">
+              <label className="form-label">Budget *</label>
+              <input className="form-input" value={form.budget} onChange={e => setForm(p => ({ ...p, budget: e.target.value }))} placeholder="e.g. ₹50,000–₹80,000" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Duration</label>
+              <input className="form-input" value={form.duration} onChange={e => setForm(p => ({ ...p, duration: e.target.value }))} placeholder="e.g. 4 weeks" />
+            </div>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Description *</label>
+            <textarea className="form-input" rows={4} value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Describe the project in detail — scope, goals, deliverables, requirements…" />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Required Skills (comma-separated)</label>
+            <input className="form-input" value={form.skills} onChange={e => setForm(p => ({ ...p, skills: e.target.value }))} placeholder="e.g. React, Node.js, MongoDB" />
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+function MessagesPage({ currentUser }) {
+  const [activeChat, setActiveChat] = useState(null);
+  const [input, setInput] = useState('');
+  const [liveMessages, setLiveMessages] = useState([]);
+  const [, forceUpdate] = useState(0);
+  const bottomRef = useRef(null);
+  const unsubRef = useRef(null);
+
+  const freeName = id => STORE.freelancers.find(f => f.id === id)?.name || 'Unknown';
+  const freeColor = id => STORE.freelancers.find(f => f.id === id)?.color || '#1a56db';
+
+  const chatKeys = Object.keys(STORE.messages);
+  const myChats = chatKeys.filter(k => k.startsWith((currentUser?.id || 'guest') + '_'));
+
+  useEffect(() => {
+    if (!activeChat) return;
+    const key = `${currentUser?.id || 'guest'}_${activeChat}`;
+    if (unsubRef.current) unsubRef.current();
+    unsubRef.current = FB.listenMessages(key, msgs => {
+      setLiveMessages(msgs);
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+    });
+    return () => { if (unsubRef.current) unsubRef.current(); };
+  }, [activeChat]);
+
+  async function sendMsg() {
+    if (!input.trim() || !activeChat) return;
+    const key = `${currentUser?.id || 'guest'}_${activeChat}`;
+    const msg = { from: currentUser?.id || 'guest', text: input, time: new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) };
+    // Keep local STORE in sync for chat list preview
+    if (!STORE.messages[key]) STORE.messages[key] = [];
+    STORE.messages[key].push({ id: newId(), ...msg });
+    setInput('');
+    forceUpdate(n => n+1);
+    try { await FB.sendMessage(key, msg); } catch(e) {}
+  }
+
+  const msgs = liveMessages.length > 0 ? liveMessages : (activeChat ? (STORE.messages[`${currentUser?.id || 'guest'}_${activeChat}`] || []) : []);
+
+  return (
+    <div className="fade-in">
+      <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '20px 24px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <h1 style={{ fontSize: 24, fontWeight: 600 }}>Messages</h1>
+        </div>
+      </div>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px' }}>
+        <div className="card" style={{ display: 'flex', height: 520 }}>
+          <div className="chat-list">
+            <div style={{ padding: '14px 18px', fontWeight: 600, fontSize: 14, borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}>CONVERSATIONS</div>
+            {myChats.length === 0 ? (
+              <div style={{ padding: '32px 18px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 14 }}>
+                No conversations yet.<br/>Browse freelancers to start chatting.
+              </div>
+            ) : myChats.map(key => {
+              const fid = key.split('_')[1];
+              const lastMsg = STORE.messages[key]?.slice(-1)[0];
+              return (
+                <div key={key} className={`chat-item ${activeChat === fid ? 'active' : ''}`} onClick={() => setActiveChat(fid)}>
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                    <Avatar name={freeName(fid)} color={freeColor(fid)} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 500 }}>{freeName(fid)}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lastMsg?.text}</div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            {!activeChat ? (
+              <div className="empty" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                <div className="empty-icon">💬</div>
+                <h3>Select a conversation</h3>
+                <p>Choose a conversation or start a new one from the Freelancers page.</p>
+              </div>
+            ) : (
+              <>
+                <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <Avatar name={freeName(activeChat)} color={freeColor(activeChat)} />
+                  <div><div style={{ fontWeight: 600 }}>{freeName(activeChat)}</div><div style={{ fontSize: 12, color: 'var(--green)' }}>● Online</div></div>
+                </div>
+                <div className="chat-messages">
+                  {msgs.map(m => (
+                    <div key={m.id} style={{ display: 'flex', flexDirection: m.from === (currentUser?.id || 'guest') ? 'row-reverse' : 'row', gap: 8 }}>
+                      <div className={`message-bubble ${m.from === (currentUser?.id || 'guest') ? 'message-mine' : 'message-theirs'}`}>
+                        {m.text}
+                        <div style={{ fontSize: 11, opacity: 0.6, marginTop: 4 }}>{m.time}</div>
+                      </div>
+                    </div>
+                  ))}
+                  <div ref={bottomRef} />
+                </div>
+                <div className="chat-input-row">
+                  <input className="form-input" style={{ flex: 1 }} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMsg()} placeholder="Type a message…" />
+                  <button className="btn btn-primary" onClick={sendMsg}>Send</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProfilePage({ currentUser, setCurrentUser, showToast }) {
+  const [form, setForm] = useState(
+    currentUser || { name: '', title: '', category: 'Engineering', location: '', rate: '', bio: '', skills: '', email: '', portfolio: '' }
+  );
+  const [tab, setTab] = useState('profile');
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewTarget, setReviewTarget] = useState('f1');
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewText, setReviewText] = useState('');
+
+  async function saveProfile() {
+    const updated = { ...form, id: currentUser?.id || newId(), skills: typeof form.skills === 'string' ? form.skills.split(',').map(s=>s.trim()).filter(Boolean) : form.skills, color: form.color || '#1a56db', avatar: form.name?.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase() || 'ME', rating: form.rating || 4.8, reviews: form.reviews || 0, available: true };
+    setCurrentUser(updated);
+    const existing = STORE.freelancers.findIndex(f => f.id === updated.id);
+    if (existing >= 0) STORE.freelancers[existing] = updated;
+    else STORE.freelancers.push(updated);
+    try { await FB.saveFreelancer(updated); } catch(e) {}
+    showToast('Profile saved!', 'success');
+  }
+
+  function submitReview() {
+    if (!reviewText) return;
+    if (!STORE.reviews[reviewTarget]) STORE.reviews[reviewTarget] = [];
+    STORE.reviews[reviewTarget].push({ id: newId(), clientName: currentUser?.name || 'You', rating: reviewRating, text: reviewText, date: 'Apr 2025' });
+    setShowReviewForm(false); setReviewText(''); setReviewRating(5);
+    showToast('Review submitted!', 'success');
+  }
+
+  return (
+    <div className="fade-in">
+      <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '20px 24px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <h1 style={{ fontSize: 24, fontWeight: 600 }}>My Account</h1>
+        </div>
+      </div>
+      <div className="section">
+        <div className="tabs" style={{ marginBottom: 28 }}>
+          {['profile','portfolio','reviews'].map(t => (
+            <button key={t} className={`tab ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)} style={{ textTransform: 'capitalize' }}>{t}</button>
+          ))}
+        </div>
+
+        {tab === 'profile' && (
+          <div style={{ maxWidth: 640 }}>
+            <div className="card" style={{ padding: 28 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 28 }}>
+                <Avatar name={form.name || 'Me'} color={form.color || '#1a56db'} size="xl" />
+                <div>
+                  <h2 style={{ fontSize: 20, fontWeight: 600 }}>{form.name || 'Your Name'}</h2>
+                  <p style={{ color: 'var(--text-secondary)' }}>{form.title || 'Your title'}</p>
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                  {[['name','Full Name','e.g. Arjun Nair'],['title','Professional Title','e.g. Full-Stack Developer'],['email','Email','your@email.com'],['location','Location','e.g. Chennai, India'],['rate','Hourly Rate','e.g. ₹1,200/hr']].map(([k,l,p]) => (
+                    <div className="form-group" key={k} style={k==='email'?{gridColumn:'1/-1'}:{}}>
+                      <label className="form-label">{l}</label>
+                      <input className="form-input" value={form[k]||''} onChange={e=>setForm(p=>({...p,[k]:e.target.value}))} placeholder={p} />
+                    </div>
+                  ))}
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Category</label>
+                  <select className="form-input" value={form.category||'Engineering'} onChange={e=>setForm(p=>({...p,category:e.target.value}))}>
+                    {['Engineering','Design','Photography','Writing','Marketing','Data & Analytics'].map(c=><option key={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Bio</label>
+                  <textarea className="form-input" rows={4} value={form.bio||''} onChange={e=>setForm(p=>({...p,bio:e.target.value}))} placeholder="Describe your professional background, expertise, and what makes you unique…" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Skills (comma-separated)</label>
+                  <input className="form-input" value={typeof form.skills === 'string' ? form.skills : (form.skills||[]).join(', ')} onChange={e=>setForm(p=>({...p,skills:e.target.value}))} placeholder="e.g. React, Node.js, TypeScript, PostgreSQL" />
+                </div>
+                <button className="btn btn-primary" style={{ alignSelf: 'flex-start', padding: '11px 28px' }} onClick={saveProfile}>Save Profile</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab === 'portfolio' && (
+          <div style={{ maxWidth: 640 }}>
+            <div className="card" style={{ padding: 28 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>Portfolio Items</h3>
+              <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 20 }}>Showcase your best work to attract more clients.</p>
+              <div className="form-group">
+                <label className="form-label">Portfolio titles (comma-separated)</label>
+                <input className="form-input" value={typeof form.portfolio === 'string' ? form.portfolio : (form.portfolio||[]).join(', ')} onChange={e=>setForm(p=>({...p,portfolio:e.target.value}))} placeholder="e.g. E-commerce Redesign, SaaS Dashboard, Mobile App" />
+              </div>
+              <button className="btn btn-primary" style={{ marginTop: 8 }} onClick={saveProfile}>Save Portfolio</button>
+              {form.portfolio && (
+                <div style={{ marginTop: 20, display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                  {(typeof form.portfolio === 'string' ? form.portfolio.split(',') : form.portfolio||[]).filter(Boolean).map(p => (
+                    <div key={p} style={{ background: 'var(--surface-hover)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '12px 18px', fontSize: 14 }}>📁 {p.trim()}</div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {tab === 'reviews' && (
+          <div style={{ maxWidth: 640 }}>
+            <div className="card" style={{ padding: 28 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <h3 style={{ fontSize: 16, fontWeight: 600 }}>Leave a Review</h3>
+                <button className="btn btn-primary btn-sm" onClick={() => setShowReviewForm(true)}>+ Write Review</button>
+              </div>
+              {Object.entries(STORE.reviews).flatMap(([fid, rs]) =>
+                rs.filter(r => r.clientName === currentUser?.name).map(r => (
+                  <div key={r.id} style={{ background: 'var(--surface-alt)', borderRadius: 'var(--radius)', padding: '14px 16px', marginBottom: 12 }}>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
+                      <strong style={{ fontSize: 14 }}>{STORE.freelancers.find(f=>f.id===fid)?.name || fid}</strong>
+                      <StarRating value={r.rating} readonly />
+                    </div>
+                    <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>{r.text}</p>
+                  </div>
+                ))
+              )}
+              {showReviewForm && (
+                <Modal onClose={() => setShowReviewForm(false)} title="Write a Review"
+                  footer={
+                    <>
+                      <button className="btn btn-secondary" onClick={() => setShowReviewForm(false)}>Cancel</button>
+                      <button className="btn btn-primary" onClick={submitReview}>Submit Review</button>
+                    </>
+                  }>
+                  <div className="form-group">
+                    <label className="form-label">Freelancer</label>
+                    <select className="form-input" value={reviewTarget} onChange={e => setReviewTarget(e.target.value)}>
+                      {STORE.freelancers.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Rating</label>
+                    <StarRating value={reviewRating} onChange={setReviewRating} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Your review</label>
+                    <textarea className="form-input" rows={4} value={reviewText} onChange={e => setReviewText(e.target.value)} placeholder="Describe your experience working with this freelancer…" />
+                  </div>
+                </Modal>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function AuthModal({ mode, onClose, onAuth }) {
+  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'client' });
+  const [loading, setLoading] = useState(false);
+
+  async function submit() {
+    if (!form.email || !form.password || (mode === 'register' && !form.name)) return;
+    setLoading(true);
+    try {
+      let user;
+      if (mode === 'register') {
+        user = await FB.register(form.email, form.password, form.name, form.role);
+      } else {
+        user = await FB.login(form.email, form.password);
+      }
+      onAuth(user);
+      onClose();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <Modal onClose={onClose} title={mode === 'login' ? 'Sign In' : 'Create Account'}
+      footer={
+        <>
+          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" onClick={submit} disabled={loading}>
+            {loading ? <div className="spinner" style={{ width: 16, height: 16 }} /> : (mode === 'login' ? 'Sign In' : 'Create Account')}
+          </button>
+        </>
+      }>
+      {mode === 'register' && (
+        <div className="form-group">
+          <label className="form-label">Full Name</label>
+          <input className="form-input" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Your full name" />
+        </div>
+      )}
+      <div className="form-group">
+        <label className="form-label">Email</label>
+        <input className="form-input" type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} placeholder="you@example.com" />
+      </div>
+      <div className="form-group">
+        <label className="form-label">Password</label>
+        <input className="form-input" type="password" value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))} placeholder="••••••••" />
+      </div>
+      {mode === 'register' && (
+        <div className="form-group">
+          <label className="form-label">I am a…</label>
+          <div style={{ display: 'flex', gap: 10 }}>
+            {['client','freelancer'].map(r => (
+              <button key={r} className="btn" style={{ flex: 1, justifyContent: 'center', background: form.role === r ? 'var(--brand-light)' : 'var(--surface)', border: `1px solid ${form.role === r ? 'var(--brand)' : 'var(--border-strong)'}`, color: form.role === r ? 'var(--brand)' : 'var(--text-secondary)', textTransform: 'capitalize' }} onClick={() => setForm(p => ({ ...p, role: r }))}>
+                {r === 'client' ? '🏢 ' : '👤 '}{r}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+// ─── App Root ─────────────────────────────────────────────────────────────────
+function App() {
+  const [page, setPage] = useState('home');
+  const [currentUser, setCurrentUser] = useState(null);
+  const [authModal, setAuthModal] = useState(null);
+  const [toasts, setToasts] = useState([]);
+
+  // Sync Firebase auth state & load real data on startup
+  useEffect(() => {
+    const unsub = auth.onAuthStateChanged(async fbUser => {
+      if (fbUser) {
+        const snap = await db.collection('users').doc(fbUser.uid).get();
+        if (snap.exists) setCurrentUser({ id: fbUser.uid, ...snap.data() });
+      } else {
+        setCurrentUser(null);
+      }
+    });
+    // Load freelancers and jobs from Firestore into STORE
+    FB.getFreelancers().then(list => { if (list.length > 0) STORE.freelancers = list; }).catch(() => {});
+    FB.getJobs().then(list => { if (list.length > 0) STORE.jobs = list; }).catch(() => {});
+    return () => unsub();
+  }, []);
+
+  function showToast(msg, type = 'success') {
+    const id = newId();
+    setToasts(t => [...t, { id, msg, type }]);
+    setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 3500);
+  }
+
+  const navItems = [
+    { id: 'home', label: 'Home' },
+    { id: 'freelancers', label: 'Find Freelancers' },
+    { id: 'jobs', label: 'Jobs' },
+    { id: 'messages', label: 'Messages' },
+    { id: 'profile', label: 'My Profile' },
+  ];
+
+  return (
+    <AppCtx.Provider value={{ showToast }}>
+      <ToastContainer toasts={toasts} />
+      <nav className="nav">
+        <div className="nav-inner">
+          <div className="nav-logo" onClick={() => setPage('home')} style={{ cursor: 'pointer' }}>
+            Skill<span>Bridge</span>
+          </div>
+          <div className="nav-links">
+            {navItems.slice(0,3).map(item => (
+              <button key={item.id} className={`nav-link ${page === item.id ? 'active' : ''}`} onClick={() => setPage(item.id)}>
+                {item.label}
+              </button>
+            ))}
+          </div>
+          <div className="nav-actions">
+            {currentUser ? (
+              <>
+                <button className={`nav-link ${page === 'messages' ? 'active' : ''}`} onClick={() => setPage('messages')}>💬 Messages</button>
+                <button className="btn btn-secondary btn-sm" onClick={() => setPage('profile')}>
+                  <Avatar name={currentUser.name} color={currentUser.color || '#1a56db'} size="sm" />
+                  {currentUser.name.split(' ')[0]}
+                </button>
+                <button className="btn btn-ghost btn-sm" onClick={() => { FB.logout(); setCurrentUser(null); showToast('Signed out', 'success'); setPage('home'); }}>Sign Out</button>
+              </>
+            ) : (
+              <>
+                <button className="btn btn-ghost btn-sm" onClick={() => setAuthModal('login')}>Sign In</button>
+                <button className="btn btn-primary btn-sm" onClick={() => setAuthModal('register')}>Get Started</button>
+              </>
+            )}
+          </div>
+        </div>
+      </nav>
+
+      {page === 'home' && <HomePage setPage={setPage} />}
+      {page === 'freelancers' && <FreelancersPage currentUser={currentUser} setPage={setPage} />}
+      {page === 'jobs' && <JobsPage currentUser={currentUser} showToast={showToast} />}
+      {page === 'messages' && <MessagesPage currentUser={currentUser} />}
+      {page === 'profile' && <ProfilePage currentUser={currentUser} setCurrentUser={setCurrentUser} showToast={showToast} />}
+      {page === 'register' && <AuthModal mode="register" onClose={() => setPage('home')} onAuth={u => { setCurrentUser(u); setPage('profile'); showToast('Welcome to SkillBridge!', 'success'); }} />}
+
+      {authModal && (
+        <AuthModal mode={authModal} onClose={() => setAuthModal(null)} onAuth={u => { setCurrentUser(u); showToast(`Welcome back, ${u.name.split(' ')[0]}!`, 'success'); }} />
+      )}
+
+      <footer style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', padding: '40px 24px', marginTop: 60 }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', justifyContent: 'space-between', gap: 40, flexWrap: 'wrap' }}>
+          <div>
+            <div className="nav-logo" style={{ fontSize: 22, marginBottom: 10 }}>Skill<span style={{ color: 'var(--text-primary)' }}>Bridge</span></div>
+            <p style={{ fontSize: 14, color: 'var(--text-secondary)', maxWidth: 260 }}>The professional freelance marketplace connecting talent with opportunity.</p>
+          </div>
+          {[['For Clients',['Post a Job','Browse Freelancers','How it Works']],['For Freelancers',['Create Profile','Find Work','Portfolio Tips']],['Company',['About Us','Blog','Contact']]].map(([title, links]) => (
+            <div key={title}>
+              <h4 style={{ fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, color: 'var(--text-muted)', marginBottom: 12 }}>{title}</h4>
+              {links.map(l => <div key={l} style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 8, cursor: 'pointer' }}>{l}</div>)}
+            </div>
+          ))}
+        </div>
+        <div style={{ maxWidth: 1200, margin: '28px auto 0', borderTop: '1px solid var(--border)', paddingTop: 20, fontSize: 13, color: 'var(--text-muted)', textAlign: 'center' }}>
+          © 2025 SkillBridge. Built with React + Firebase.
+        </div>
+      </footer>
+    </AppCtx.Provider>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
