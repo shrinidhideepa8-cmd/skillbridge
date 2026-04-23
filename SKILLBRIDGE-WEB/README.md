@@ -89,4 +89,5 @@ const FIREBASE_CONFIG = {
 ## 👤 Author
 
 **Shrinidhi S.K**
-[LinkedIn](https://linkedin.com/in/YOUR_PROFILE) · [GitHub](https://github.com/YOUR_USERNAME)
+[LinkedIn](www.linkedin.com/in/shrinidhi-s-k-760b6a323?utmsource =shareutmcampaign = shareviautmcontent = prof
+ileutmmedium = iosapp) · [GitHub](https://github.com/shrinidhideepa8-cmd)
